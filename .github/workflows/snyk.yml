@@ -32,7 +32,7 @@ jobs:
       - name: extract cwes from snyk results
         id: extract-cwes
         run: |
-          cwe_array=$(cat snyk-code-results.json | jq '[.runs[].tool.driver.rules[].properties.cwe | select(. != null) | if type == "array" then .[] else . end]'
+          cwe_array=$(cat snyk-code-results.json | jq '[.runs[].tool.driver.rules[].properties.cwe | select(. != null) | if type == "array" then .[] else . end]')
           echo "cwes=$cwe_array" >> $GITHUB_OUTPUT
 
   # example job that uses the extracted cwes
