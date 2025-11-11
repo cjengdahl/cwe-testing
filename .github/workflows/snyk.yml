@@ -63,8 +63,9 @@ jobs:
 
     steps:
       - name: Process extracted CWEs
-        uses: cjengdahl/cwe-action@poc
+        uses: cjengdahl/cwe-action@pocV2
         with:
           api_url: test.com
           api_key: api_key
           cwes: '${{ needs.snyk-scan.outputs.cwes }}'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
