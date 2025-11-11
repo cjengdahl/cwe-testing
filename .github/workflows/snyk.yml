@@ -7,83 +7,46 @@ on:
       - develop
 
 jobs:
+
   snyk-scan:
     runs-on: ubuntu-latest
-    
+
     outputs:
       cwes: ${{ steps.extract-cwes.outputs.cwes }}
-      cwe-list: ${{ steps.extract-cwes.outputs.cwe-list }}
-      
+
     steps:
       - name: checkout code
-        uses: actions/checkout@v4
-
-      - name: setup go
-        uses: actions/setup-go@v5
+        uses: actions/checkout@master
+      - name: setup snyk
+        uses: snyk/actions/setup@master
+      - name: setup python
+        uses: actions/setup-python@v6
         with:
-          go-version: '1.21'
-          cache: true
-
-      # run snyk and output to json format
-      - name: run snyk security scan
-        continue-on-error: true
+          python-version: '3.13'
+      - name: rum snyk code test
         run: |
-          npm install -g snyk
-          snyk auth ${{ secrets.SNYK_TOKEN }}
-          snyk test --json --severity-threshold=low > snyk-results.json || true
-          snyk code test --json > snyk-code-results.json || true
-        
-      # extract cwes from snyk output
+          # TODO: support scanning dependencies as well with `snyk test --sarif`
+          snyk code test --sarif > snyk-code-results.json || true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: extract cwes from snyk results
         id: extract-cwes
         run: |
-          # extract cwes from dependency scan
-          dep_cwes=$(cat snyk-results.json | jq -r '.vulnerabilities[]? | select(.identifiers.CWE != null) | .identifiers.CWE[]?' | sort -u)
-          
-          # extract cwes from code scan
-          code_cwes=$(cat snyk-code-results.json | jq -r '.runs[]?.results[]?.ruleId?' | grep -o 'CWE-[0-9]*' | sort -u || echo "")
-          
-          # combine and deduplicate
-          all_cwes=$(echo -e "$dep_cwes\n$code_cwes" | grep -v '^$' | sort -u)
-          
-          # format as json array
-          cwe_array=$(echo "$all_cwes" | jq -R . | jq -s .)
-          
-          # format as comma-separated list
-          cwe_list=$(echo "$all_cwes" | tr '\n' ',' | sed 's/,$//')
-          
+          cwe_array=$(cat snyk-code-results.json | jq '[.runs[].tool.driver.rules[].properties.cwe | select(. != null) | if type == "array" then .[] else . end]'
           echo "cwes=$cwe_array" >> $GITHUB_OUTPUT
-          echo "cwe-list=$cwe_list" >> $GITHUB_OUTPUT
-          
-          echo "found cwes:"
-          echo "$all_cwes"
-
-      # upload full results as artifact
-      - name: upload snyk results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: snyk-results
-          path: |
-            snyk-results.json
-            snyk-code-results.json
 
   # example job that uses the extracted cwes
   process-cwes:
     needs: snyk-scan
     runs-on: ubuntu-latest
     if: needs.snyk-scan.outputs.cwes != '[]'
-    
+
     steps:
       - name: process extracted cwes
         run: |
-          echo "processing cwes: ${{ needs.snyk-scan.outputs.cwe-list }}"
-          
-          # example: you can now use these cwes in another action
-          # such as creating an issue, sending notifications, etc.
-          
+          echo "processing cwes: ${{ needs.snyk-scan.outputs.cwes }}"
           cwes='${{ needs.snyk-scan.outputs.cwes }}'
           echo "$cwes" | jq -r '.[]' | while read cwe; do
             echo "processing $cwe"
-            # your custom logic here
+            # eventually sending off data to exxternal api here
           done
