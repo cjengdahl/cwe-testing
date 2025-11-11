@@ -41,7 +41,7 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
-  process-cwes:
+  pretend-process-cwes:
     needs: snyk-scan
     runs-on: ubuntu-latest
     if: needs.snyk-scan.outputs.cwes != '[]'
@@ -55,3 +55,16 @@ jobs:
             echo "Processing $cwe"
             # TODO: send data to external API here
           done
+
+  process-cwes:
+    needs: snyk-scan
+    runs-on: ubuntu-latest
+    if: needs.snyk-scan.outputs.cwes != '[]'
+
+    steps:
+      - name: Process extracted CWEs
+        uses: cjengdahl/cwe-action@poc
+        with:
+          api_url: test.com
+          api_key: api_key
+          cwes: '${{ needs.snyk-scan.outputs.cwes }}'
