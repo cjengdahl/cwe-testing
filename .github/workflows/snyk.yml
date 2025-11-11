@@ -1,4 +1,4 @@
-name: snyk security scan with cwe extraction
+name: Snyk Security Scan with CWE Extraction
 
 on:
   pull_request:
@@ -7,7 +7,6 @@ on:
       - develop
 
 jobs:
-
   snyk-scan:
     runs-on: ubuntu-latest
 
@@ -15,41 +14,44 @@ jobs:
       cwes: ${{ steps.extract-cwes.outputs.cwes }}
 
     steps:
-      - name: checkout code
-        uses: actions/checkout@master
-      - name: setup snyk
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Snyk
         uses: snyk/actions/setup@master
-      - name: setup python
+
+      - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
-      - name: rum snyk code test
+
+      - name: Run Snyk code test
         run: |
           # TODO: support scanning dependencies as well with `snyk test --sarif`
           snyk code test --sarif > snyk-code-results.json || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - name: extract cwes from snyk results
+
+      - name: Extract CWEs from Snyk results
         id: extract-cwes
         run: |
           {
             echo "cwes<<EOF"
-            cat snyk-code-results.json | jq -c '[.runs[].tool.driver.rules[].properties.cwe | select(. != null) | if type == "array" then .[] else . end]'
+            jq -c '[.runs[].tool.driver.rules[].properties.cwe | select(. != null) | if type == "array" then .[] else . end]' snyk-code-results.json
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
-  # example job that uses the extracted cwes
   process-cwes:
     needs: snyk-scan
     runs-on: ubuntu-latest
     if: needs.snyk-scan.outputs.cwes != '[]'
 
     steps:
-      - name: process extracted cwes
+      - name: Process extracted CWEs
         run: |
-          echo "processing cwes: ${{ needs.snyk-scan.outputs.cwes }}"
+          echo "Processing CWEs: ${{ needs.snyk-scan.outputs.cwes }}"
           cwes='${{ needs.snyk-scan.outputs.cwes }}'
           echo "$cwes" | jq -r '.[]' | while read cwe; do
-            echo "processing $cwe"
-            # eventually sending off data to exxternal api here
+            echo "Processing $cwe"
+            # TODO: send data to external API here
           done
