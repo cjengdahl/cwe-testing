@@ -1,0 +1,41 @@
+name: GitHub Advanced Security Scan with CWE Extraction
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  codeql-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    outputs:
+      cwes: ${{ steps.extract-cwes.outputs.cwes }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: python
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          output: codeql-results
+          upload: false
+
+      - name: Extract CWEs from CodeQL results
+        id: extract-cwes
+        # let's just print the results now so we can see if we can parse out cwes
+        run: jq '.' codeql-results/*.sarif
