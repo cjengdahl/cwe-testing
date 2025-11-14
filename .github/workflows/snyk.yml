@@ -6,6 +6,9 @@ on:
       - main
       - develop
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   snyk-scan:
     runs-on: ubuntu-latest
