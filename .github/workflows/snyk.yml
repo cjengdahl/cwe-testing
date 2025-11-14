@@ -63,7 +63,7 @@ jobs:
 
     steps:
       - name: Process extracted CWEs
-        uses: cjengdahl/cwe-action@pocV3
+        uses: cjengdahl/cwe-action@pocV4
         with:
           api_url: test.com
           api_key: ${{ secrets.SECURITY_JOURNEY_API_KEY }}
