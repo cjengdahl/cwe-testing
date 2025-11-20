@@ -44,21 +44,6 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
-  pretend-process-cwes:
-    needs: snyk-scan
-    runs-on: ubuntu-latest
-    if: needs.snyk-scan.outputs.cwes != '[]'
-
-    steps:
-      - name: Process extracted CWEs
-        run: |
-          echo "Processing CWEs: ${{ needs.snyk-scan.outputs.cwes }}"
-          cwes='${{ needs.snyk-scan.outputs.cwes }}'
-          echo "$cwes" | jq -r '.[]' | while read cwe; do
-            echo "Processing $cwe"
-            # TODO: send data to external API here
-          done
-
   process-cwes:
     needs: snyk-scan
     runs-on: ubuntu-latest
@@ -66,8 +51,8 @@ jobs:
 
     steps:
       - name: Process extracted CWEs
-        uses: cjengdahl/cwe-action@pocV4
+        uses: cjengdahl/cwe-action@pocV5
         with:
-          api_url: test.com
+          api_url: https://my.securityjourney.dev/svc/integrations/cwes
           api_key: ${{ secrets.SECURITY_JOURNEY_API_KEY }}
           cwes: '${{ needs.snyk-scan.outputs.cwes }}'
