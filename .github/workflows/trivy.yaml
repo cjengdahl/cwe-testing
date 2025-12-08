@@ -1,0 +1,32 @@
+name: Trivy with CWE Extraction
+on:
+  pull_request:
+    branches:
+      - trivy
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build an image from Dockerfile
+        run: docker build -t docker.io/my-organization/my-app:${{ github.sha }} .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'docker.io/my-organization/my-app:${{ github.sha }}'
+          format: json
+          output: trivy-results
+          vuln-type: 'os,library'
+
+      - name: Extract CWEs from trivy results
+        id: extract-cwes
+        # let's just print the results now so we can see if we can parse out cwes
+        run: jq '.' trivy-results
