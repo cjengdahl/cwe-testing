@@ -3,8 +3,7 @@ name: GitHub Advanced Security Scan with CWE Extraction
 on:
   pull_request:
     branches:
-      - main
-      - develop
+      - ghas
 
 jobs:
   codeql-scan:
