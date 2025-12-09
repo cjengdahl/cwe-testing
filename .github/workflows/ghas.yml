@@ -35,6 +35,13 @@ jobs:
           upload: false
 
       - name: Extract CWEs from CodeQL results
-        id: extract-cwes
-        # let's just print the results now so we can see if we can parse out cwes
-        run: jq '.' codeql-results/*.sarif
+        id: cwes
+        run: |
+          echo "--------raw results---------"
+          cat codeql-results/*.sarif
+          echo "----------------------------"
+          cwes=$(jq -c '[.runs[].results[]?.ruleId as $rid | .runs[].tool.extensions[].rules[]? | select(.id == $rid) | .properties.tags[]? | select(startswith("external/cwe/")) | ltrimstr("external/cwe/")] | unique' codeql-results/*.sarif)
+          echo "cwes=$cwes" >> $GITHUB_OUTPUT
+      - name: next step
+        run: |
+          echo '${{ steps.cwes.outputs.cwes }}'
