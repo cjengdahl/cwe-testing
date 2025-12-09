@@ -9,8 +9,12 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  snyk-scan:
+  scan:
+    name: Snyk Code Scan
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
 
     outputs:
       cwes: ${{ steps.extract-cwes.outputs.cwes }}
@@ -19,13 +23,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Snyk
-        uses: snyk/actions/setup@master
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
+
+      - name: Setup Snyk
+        uses: snyk/actions/setup@master
 
       - name: Run Snyk code test
         run: |
@@ -34,7 +38,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Extract CWEs from Snyk results
+      - name: Extract CWEs from results
         id: extract-cwes
         run: |
           {
@@ -44,9 +48,11 @@ jobs:
           } >> $GITHUB_OUTPUT
 
   process-cwes:
-    needs: snyk-scan
+    name: Process CWEs
+    needs: scan
     runs-on: ubuntu-latest
-    if: needs.snyk-scan.outputs.cwes != '[]'
+
+    if: needs.scan.outputs.cwes != '[]'
 
     steps:
       - name: Process extracted CWEs
@@ -54,4 +60,9 @@ jobs:
         with:
           api_url: https://api.securityjourney.dev/integrations
           api_key: ${{ secrets.SECURITY_JOURNEY_API_KEY }}
-          cwes: '${{ needs.snyk-scan.outputs.cwes }}'
+          cwes: '${{ needs.scan.outputs.cwes }}'
+
+      - name: Print Security Journey Response
+        run: |
+          echo "Security Journey Response:"
+          echo '${{ steps.cwe-action.outputs.api_response }}'
