@@ -25,6 +25,10 @@ jobs:
         with:
           languages: python
           queries: security-and-quality
+          config: |
+            threat-models:
+              - local
+              - remote
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v4
