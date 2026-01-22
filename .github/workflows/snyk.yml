@@ -56,9 +56,8 @@ jobs:
 
     steps:
       - name: Process extracted CWEs
-        uses: cjengdahl/cwe-action@v1
+        uses: securityJourney/cwe-action@v1
         with:
-          api_url: https://api.securityjourney.dev/integrations
           api_key: ${{ secrets.SECURITY_JOURNEY_API_KEY }}
           cwes: '${{ needs.scan.outputs.cwes }}'
 
